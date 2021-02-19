@@ -18,7 +18,7 @@ import sys
 
 
 class LabelFileFormat(Enum):
-    PASCAL_VOC= 1
+    PASCAL_VOC = 1
     YOLO = 2
     CREATE_ML = 3
 
@@ -38,7 +38,15 @@ class LabelFile(object):
         self.imageData = None
         self.verified = False
 
-    def saveCreateMLFormat(self, filename, shapes, imagePath, imageData, classList, lineColor=None, fillColor=None, databaseSrc=None):
+    def saveCreateMLFormat(self,
+                           filename,
+                           shapes,
+                           imagePath,
+                           imageData,
+                           classList,
+                           lineColor=None,
+                           fillColor=None,
+                           databaseSrc=None):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -47,16 +55,28 @@ class LabelFile(object):
 
         image = QImage()
         image.load(imagePath)
-        imageShape = [image.height(), image.width(),
-                      1 if image.isGrayscale() else 3]
-        writer = CreateMLWriter(imgFolderName, imgFileName,
-                                imageShape, shapes, outputFile, localimgpath=imagePath)
+        imageShape = [
+            image.height(),
+            image.width(), 1 if image.isGrayscale() else 3
+        ]
+        writer = CreateMLWriter(imgFolderName,
+                                imgFileName,
+                                imageShape,
+                                shapes,
+                                outputFile,
+                                localimgpath=imagePath)
         writer.verified = self.verified
         writer.write()
 
-
-    def savePascalVocFormat(self, filename, shapes, imagePath, imageData,
-                            lineColor=None, fillColor=None, databaseSrc=None):
+    def savePascalVocFormat(self,
+                            filename,
+                            shapes,
+                            imagePath,
+                            imageData,
+                            lineColor=None,
+                            fillColor=None,
+                            databaseSrc=None,
+                            existRootXML=None):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -68,10 +88,14 @@ class LabelFile(object):
         else:
             image = QImage()
             image.load(imagePath)
-        imageShape = [image.height(), image.width(),
-                      1 if image.isGrayscale() else 3]
-        writer = PascalVocWriter(imgFolderName, imgFileName,
-                                 imageShape, localImgPath=imagePath)
+        imageShape = [
+            image.height(),
+            image.width(), 1 if image.isGrayscale() else 3
+        ]
+        writer = PascalVocWriter(imgFolderName,
+                                 imgFileName,
+                                 imageShape,
+                                 localImgPath=imagePath)
         writer.verified = self.verified
 
         for shape in shapes:
@@ -80,13 +104,21 @@ class LabelFile(object):
             # Add Chris
             difficult = int(shape['difficult'])
             bndbox = LabelFile.convertPoints2BndBox(points)
-            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label,
+                             difficult)
 
-        writer.save(targetFile=filename)
+        writer.save(targetFile=filename, existRootXML=existRootXML)
         return
 
-    def saveYoloFormat(self, filename, shapes, imagePath, imageData, classList,
-                            lineColor=None, fillColor=None, databaseSrc=None):
+    def saveYoloFormat(self,
+                       filename,
+                       shapes,
+                       imagePath,
+                       imageData,
+                       classList,
+                       lineColor=None,
+                       fillColor=None,
+                       databaseSrc=None):
         imgFolderPath = os.path.dirname(imagePath)
         imgFolderName = os.path.split(imgFolderPath)[-1]
         imgFileName = os.path.basename(imagePath)
@@ -98,10 +130,14 @@ class LabelFile(object):
         else:
             image = QImage()
             image.load(imagePath)
-        imageShape = [image.height(), image.width(),
-                      1 if image.isGrayscale() else 3]
-        writer = YOLOWriter(imgFolderName, imgFileName,
-                                 imageShape, localImgPath=imagePath)
+        imageShape = [
+            image.height(),
+            image.width(), 1 if image.isGrayscale() else 3
+        ]
+        writer = YOLOWriter(imgFolderName,
+                            imgFileName,
+                            imageShape,
+                            localImgPath=imagePath)
         writer.verified = self.verified
 
         for shape in shapes:
@@ -110,7 +146,8 @@ class LabelFile(object):
             # Add Chris
             difficult = int(shape['difficult'])
             bndbox = LabelFile.convertPoints2BndBox(points)
-            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label,
+                             difficult)
 
         writer.save(targetFile=filename, classList=classList)
         return

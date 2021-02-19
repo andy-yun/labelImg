@@ -276,3 +276,11 @@ Stargazers over time
 
 .. image:: https://starchart.cc/tzutalin/labelImg.svg
 
+
+windows pyinstaller build
+c:\> conda install pyinstaller
+c:\> pyinstaller --hidden-import=xml \
+            --hidden-import=xml.etree \
+            --hidden-import=xml.etree.ElementTree \
+            --hidden-import=lxml.etree \
+             -D -F -n labelImg -c "./labelImg.py" -p ./libs -p ./

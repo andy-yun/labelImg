@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import sys
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 from lxml import etree
@@ -8,13 +7,17 @@ import codecs
 from libs.constants import DEFAULT_ENCODING
 from libs.ustr import ustr
 
-
 XML_EXT = '.xml'
 ENCODE_METHOD = DEFAULT_ENCODING
 
-class PascalVocWriter:
 
-    def __init__(self, foldername, filename, imgSize,databaseSrc='Unknown', localImgPath=None):
+class PascalVocWriter:
+    def __init__(self,
+                 foldername,
+                 filename,
+                 imgSize,
+                 databaseSrc='Unknown',
+                 localImgPath=None):
         self.foldername = foldername
         self.filename = filename
         self.databaseSrc = databaseSrc
@@ -27,9 +30,13 @@ class PascalVocWriter:
         """
             Return a pretty-printed XML string for the Element.
         """
-        rough_string = ElementTree.tostring(elem, 'utf8')
+        rough_string = ElementTree.tostring(elem, encoding='utf8')
         root = etree.fromstring(rough_string)
-        return etree.tostring(root, pretty_print=True, encoding=ENCODE_METHOD).replace("  ".encode(), "\t".encode())
+        return etree.tostring(root,
+                              pretty_print=True,
+                              encoding=ENCODE_METHOD,
+                              xml_declaration=True).replace(
+                                  "  ".encode(), "\t".encode())
         # minidom does not support UTF-8
         '''reparsed = minidom.parseString(rough_string)
         return reparsed.toprettyxml(indent="\t", encoding=ENCODE_METHOD)'''
@@ -77,6 +84,58 @@ class PascalVocWriter:
         segmented.text = '0'
         return top
 
+    def updateXML(self, top):
+        """
+            Return XML root based on the existig xmltree
+            added by ysyun.andy@gmail.com
+        """
+        # print(etree.tostring(top, encoding=str))
+        top = ElementTree.fromstring(etree.tostring(top, encoding=str))
+
+        # Check conditions
+        if self.filename is None or \
+                self.foldername is None or \
+                self.imgSize is None:
+            return None
+
+        if self.verified:
+            top.set('verified', 'yes')
+
+        top.find('folder').text = self.foldername
+        top.find('filename').text = self.filename
+
+        if self.localImgPath is not None:
+            pathtag = top.find('path')
+            if pathtag is None:
+                pathtag = SubElement(top, 'path')
+            pathtag.text = self.localImgPath
+
+        if top.find('source') is None:
+            source = SubElement(top, 'source')
+            database = SubElement(source, 'database')
+            database.text = self.databaseSrc
+
+        size_part = top.find('size')
+        size_part.find('width').text = str(self.imgSize[1])
+        size_part.find('height').text = str(self.imgSize[0])
+        depthtag = size_part.find('depth')
+        if depthtag is None:
+            depthtag = SubElement(size_part, 'depth')
+        if len(self.imgSize) == 3:
+            depthtag.text = str(self.imgSize[2])
+        else:
+            depthtag.text = '1'
+
+        segmented = top.find('segmented')
+        if segmented is None:
+            segmented = SubElement(top, 'segmented')
+        segmented.text = '0'
+
+        # remove objects
+        for o in top.findall('object'):
+            top.remove(o)
+        return top
+
     def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult):
         bndbox = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
         bndbox['name'] = name
@@ -91,14 +150,18 @@ class PascalVocWriter:
             pose = SubElement(object_item, 'pose')
             pose.text = "Unspecified"
             truncated = SubElement(object_item, 'truncated')
-            if int(float(each_object['ymax'])) == int(float(self.imgSize[0])) or (int(float(each_object['ymin']))== 1):
-                truncated.text = "1" # max == height or min
-            elif (int(float(each_object['xmax']))==int(float(self.imgSize[1]))) or (int(float(each_object['xmin']))== 1):
-                truncated.text = "1" # max == width or min
+            if int(float(each_object['ymax'])) == int(float(
+                    self.imgSize[0])) or (int(float(each_object['ymin']))
+                                          == 1):
+                truncated.text = "1"  # max == height or min
+            elif (int(float(each_object['xmax']))
+                  == int(float(self.imgSize[1]))) or (int(
+                      float(each_object['xmin'])) == 1):
+                truncated.text = "1"  # max == width or min
             else:
                 truncated.text = "0"
             difficult = SubElement(object_item, 'difficult')
-            difficult.text = str( bool(each_object['difficult']) & 1 )
+            difficult.text = str(bool(each_object['difficult']) & 1)
             bndbox = SubElement(object_item, 'bndbox')
             xmin = SubElement(bndbox, 'xmin')
             xmin.text = str(each_object['xmin'])
@@ -109,33 +172,39 @@ class PascalVocWriter:
             ymax = SubElement(bndbox, 'ymax')
             ymax.text = str(each_object['ymax'])
 
-    def save(self, targetFile=None):
-        root = self.genXML()
+    def save(self, targetFile=None, existRootXML=None):
+        if existRootXML is None:
+            root = self.genXML()
+        else:
+            root = self.updateXML(existRootXML)
         self.appendObjects(root)
         out_file = None
         if targetFile is None:
-            out_file = codecs.open(
-                self.filename + XML_EXT, 'w', encoding=ENCODE_METHOD)
+            out_file = codecs.open(self.filename + XML_EXT,
+                                   'w',
+                                   encoding=ENCODE_METHOD)
         else:
             out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
 
         prettifyResult = self.prettify(root)
-        out_file.write(prettifyResult.decode('utf8'))
+        out_file.write(prettifyResult.decode(ENCODE_METHOD))
         out_file.close()
+        # for checking
+        # if targetFile is None:
+        #     out_file = self.filename + XML_EXT
+        # else:
+        #     out_file = targetFile
+        # tree = ElementTree.ElementTree(root)
+        # tree.write(out_file, encoding=ENCODE_METHOD, xml_declaration=True)
 
 
 class PascalVocReader:
-
     def __init__(self, filepath):
         # shapes type:
         # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
         self.filepath = filepath
         self.verified = False
-        try:
-            self.parseXML()
-        except:
-            pass
 
     def getShapes(self):
         return self.shapes
@@ -150,17 +219,19 @@ class PascalVocReader:
 
     def parseXML(self):
         assert self.filepath.endswith(XML_EXT), "Unsupport file format"
-        parser = etree.XMLParser(encoding=ENCODE_METHOD)
-        xmltree = ElementTree.parse(self.filepath, parser=parser).getroot()
-        filename = xmltree.find('filename').text
+        parser = etree.XMLParser(encoding=ENCODE_METHOD,
+                                 remove_blank_text=True)
+        xmltree = ElementTree.parse(self.filepath, parser=parser)
+        xmlRoot = xmltree.getroot()
+        # filename = xmlRoot.find('filename').text
         try:
-            verified = xmltree.attrib['verified']
+            verified = xmlRoot.attrib['verified']
             if verified == 'yes':
                 self.verified = True
         except KeyError:
             self.verified = False
 
-        for object_iter in xmltree.findall('object'):
+        for object_iter in xmlRoot.findall('object'):
             bndbox = object_iter.find("bndbox")
             label = object_iter.find('name').text
             # Add chris
@@ -168,4 +239,4 @@ class PascalVocReader:
             if object_iter.find('difficult') is not None:
                 difficult = bool(int(object_iter.find('difficult').text))
             self.addShape(label, bndbox, difficult)
-        return True
+        return xmlRoot
