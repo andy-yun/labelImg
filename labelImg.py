@@ -106,6 +106,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.screencast = "https://youtu.be/p0nR2YsCY_U"
 
         # Load predefined classes to the list
+        self.predefinedClassFile = defaultPrefdefClassFile
         self.loadPredefinedClasses(defaultPrefdefClassFile)
 
         # Main widgets and related state.
@@ -1689,7 +1690,7 @@ class MainWindow(QMainWindow, WindowMixin):
             return
 
         self.set_format(FORMAT_YOLO)
-        tYoloParseReader = YoloReader(txtPath, self.image)
+        tYoloParseReader = YoloReader(txtPath, self.image, self.predefinedClassFile)
         shapes = tYoloParseReader.getShapes()
         print(shapes)
         self.loadLabels(shapes)
