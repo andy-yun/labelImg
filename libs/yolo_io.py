@@ -99,7 +99,6 @@ class YoloReader:
         self.classListPath = os.path.join(dir_path, "classes.txt")
         if not os.path.exists(self.classListPath):
             self.classListPath = classListPath
-        print(self.classListPath, classListPath)
         assert self.classListPath is not None, \
             'class file is placed at labels directory or use predefined classes'
 

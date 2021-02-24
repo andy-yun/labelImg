@@ -1419,6 +1419,8 @@ class MainWindow(QMainWindow, WindowMixin):
             targetDirPath = ustr(defaultOpenDirPath)
         self.lastOpenDir = targetDirPath
         self.importDirImages(targetDirPath)
+        # update defaultSaveDir, @ysyun-andy
+        self.defaultSaveDir = targetDirPath
 
     def importDirImages(self, dirpath):
         if not self.mayContinue() or not dirpath:
@@ -1690,7 +1692,8 @@ class MainWindow(QMainWindow, WindowMixin):
             return
 
         self.set_format(FORMAT_YOLO)
-        tYoloParseReader = YoloReader(txtPath, self.image, self.predefinedClassFile)
+        tYoloParseReader = YoloReader(txtPath, self.image,
+                                      self.predefinedClassFile)
         shapes = tYoloParseReader.getShapes()
         print(shapes)
         self.loadLabels(shapes)
