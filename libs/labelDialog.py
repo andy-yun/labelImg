@@ -12,7 +12,6 @@ BB = QDialogButtonBox
 
 
 class LabelDialog(QDialog):
-
     def __init__(self, text="Enter object label", parent=None, listItem=None):
         super(LabelDialog, self).__init__(parent)
 
@@ -22,7 +21,7 @@ class LabelDialog(QDialog):
         self.edit.editingFinished.connect(self.postProcess)
 
         model = QStringListModel()
-        model.setStringList(listItem)
+        model.setStringList(list(listItem.keys()))
         completer = QCompleter()
         completer.setModel(model)
         self.edit.setCompleter(completer)
@@ -38,7 +37,7 @@ class LabelDialog(QDialog):
 
         if listItem is not None and len(listItem) > 0:
             self.listWidget = QListWidget(self)
-            for item in listItem:
+            for item in listItem.keys():
                 self.listWidget.addItem(item)
             self.listWidget.itemClicked.connect(self.listItemClick)
             self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClick)
@@ -69,8 +68,10 @@ class LabelDialog(QDialog):
         if move:
             cursor_pos = QCursor.pos()
             parent_bottomRight = self.parentWidget().geometry()
-            max_x = parent_bottomRight.x() + parent_bottomRight.width() - self.sizeHint().width()
-            max_y = parent_bottomRight.y() + parent_bottomRight.height() - self.sizeHint().height()
+            max_x = parent_bottomRight.x() + parent_bottomRight.width(
+            ) - self.sizeHint().width()
+            max_y = parent_bottomRight.y() + parent_bottomRight.height(
+            ) - self.sizeHint().height()
             max_global = self.parentWidget().mapToGlobal(QPoint(max_x, max_y))
             if cursor_pos.x() > max_global.x():
                 cursor_pos.setX(max_global.x())

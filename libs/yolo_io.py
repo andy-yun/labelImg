@@ -12,6 +12,22 @@ TXT_EXT = '.txt'
 ENCODE_METHOD = DEFAULT_ENCODING
 
 
+def get_class_name(classesList, index):
+    print(classesList, index)
+    print(list(classesList.values()).index(int(index)))
+    print(
+        list(classesList.keys())[list(classesList.values()).index(int(index))])
+    return list(classesList.keys())[list(classesList.values()).index(
+        int(index))]
+
+
+def get_class_id(classesList, name):
+    if name in classesList.keys():
+        return classesList[name]
+    else:
+        return -1
+
+
 class YOLOWriter:
     def __init__(self,
                  foldername,
@@ -33,7 +49,7 @@ class YOLOWriter:
         bndbox['difficult'] = difficult
         self.boxlist.append(bndbox)
 
-    def BndBox2YoloLine(self, box, classList=[]):
+    def BndBox2YoloLine(self, box, classList={}):
         xmin = box['xmin']
         xmax = box['xmax']
         ymin = box['ymin']
@@ -45,16 +61,19 @@ class YOLOWriter:
         w = float((xmax - xmin)) / self.imgSize[1]
         h = float((ymax - ymin)) / self.imgSize[0]
 
-        # PR387
-        boxName = box['name']
-        if boxName not in classList:
-            classList.append(boxName)
-
-        classIndex = classList.index(boxName)
+        # PR387, andy-yun
+        boxName = box['name'].split(':')
+        if boxName[0] not in classList.keys():
+            if len(boxName) > 1:
+                lno = int(boxName[1])
+            else:
+                lno = classList[list(classList.keys())[-1]] + 1
+            classList[boxName[0]] = lno
+        classIndex = classList[boxName[0]]
 
         return classIndex, xcen, ycen, w, h
 
-    def save(self, classList=[], targetFile=None):
+    def save(self, classList={}, targetFile=None):
 
         out_file = None  #Update yolo .txt
         out_class_file = None  #Update class list .txt
@@ -81,8 +100,8 @@ class YOLOWriter:
 
         # print (classList)
         # print (out_class_file)
-        for c in classList:
-            out_class_file.write(c + '\n')
+        for k, v in classList.items():
+            out_class_file.write(f'{k}:{v}\n')
 
         out_class_file.close()
         out_file.close()
@@ -91,7 +110,7 @@ class YOLOWriter:
 class YoloReader:
     def __init__(self, filepath, image, classListPath=None):
         # shapes type:
-        # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
+        # [label, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
         self.filepath = filepath
 
@@ -104,8 +123,17 @@ class YoloReader:
 
         # print (filepath, self.classListPath)
 
-        classesFile = open(self.classListPath, 'r')
-        self.classes = classesFile.read().strip('\n').split('\n')
+        # read classes information
+        with codecs.open(self.classListPath, 'r', 'utf-8') as f:
+            lines = f.readlines()
+            obno = 0
+            self.classes = {}
+            for l in lines:
+                l = l.strip().split(':')
+                if len(l) > 1:
+                    obno = int(l[1])
+                self.classes[l[0]] = obno
+                obno += 1
 
         # print (self.classes)
 
@@ -131,7 +159,8 @@ class YoloReader:
         self.shapes.append((label, points, None, None, difficult))
 
     def yoloLine2Shape(self, classIndex, xcen, ycen, w, h):
-        label = self.classes[int(classIndex)]
+        # by andy-yun
+        label = get_class_name(self.classes, classIndex)
 
         xmin = max(float(xcen) - float(w) / 2, 0)
         xmax = min(float(xcen) + float(w) / 2, 1)

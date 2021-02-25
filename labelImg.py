@@ -94,7 +94,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # For loading all image under a directory
         self.mImgList = []
         self.dirname = None
-        self.labelHist = []
+        self.labelHist = {}
         self.lastOpenDir = None
 
         # Whether we need to save or not.
@@ -1070,8 +1070,14 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.actions.editMode.setEnabled(True)
             self.setDirty()
 
-            if text not in self.labelHist:
-                self.labelHist.append(text)
+            # if text is not in self.labelHist.keys(), add keys
+            text = text.split(':')
+            if text[0] not in self.labelHist.keys():
+                if len(text) > 1:
+                    lno = int(text[1])
+                else:
+                    lno = self.labelHist[list(self.labelHist.keys())[-1]] + 1
+                self.labelHist[text[0]] = lno
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
@@ -1358,6 +1364,10 @@ class MainWindow(QMainWindow, WindowMixin):
         return images
 
     def changeSavedirDialog(self, _value=False):
+        self.itemsToShapes.clear()
+        self.shapesToItems.clear()
+        self.labelList.clear()
+
         if self.defaultSaveDir is not None:
             path = ustr(self.defaultSaveDir)
         else:
@@ -1664,12 +1674,18 @@ class MainWindow(QMainWindow, WindowMixin):
     def loadPredefinedClasses(self, predefClassesFile):
         if os.path.exists(predefClassesFile) is True:
             with codecs.open(predefClassesFile, 'r', 'utf8') as f:
+                obno = 0
                 for line in f:
                     line = line.strip()
+                    line = line.split(':')
+                    if len(line) > 1:
+                        obno = int(line[1])
                     if self.labelHist is None:
-                        self.labelHist = [line]
+                        self.labelHist = {line[0]: obno}
                     else:
-                        self.labelHist.append(line)
+                        self.labelHist[line[0]] = obno
+                    obno += 1
+            print(self.labelHist)
 
     def loadPascalXMLByFilename(self, xmlPath):
         if self.filePath is None:
@@ -1695,7 +1711,6 @@ class MainWindow(QMainWindow, WindowMixin):
         tYoloParseReader = YoloReader(txtPath, self.image,
                                       self.predefinedClassFile)
         shapes = tYoloParseReader.getShapes()
-        print(shapes)
         self.loadLabels(shapes)
         self.canvas.verified = tYoloParseReader.verified
 
