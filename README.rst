@@ -61,10 +61,13 @@ Python 3 + Qt5
 
     brew install qt  # Install qt-5.x.x by Homebrew
     brew install libxml2
+    brew install pyqt5
 
     or using pip
 
     pip3 install pyqt5 lxml # Install qt and lxml by pip
+    # if pip error is occurred,
+    sudo easy_install pip
 
     make qt5py3
     python3 labelImg.py
