@@ -12,6 +12,21 @@ TXT_EXT = '.txt'
 ENCODE_METHOD = DEFAULT_ENCODING
 
 
+def load_classes_info(classListPath):
+    # read classes information
+    classes = {}
+    with codecs.open(classListPath, 'r', 'utf-8') as f:
+        lines = f.readlines()
+        obno = 0
+        for line in lines:
+            line = l.strip().split(':')
+            if len(line) > 1:
+                obno = int(lind[1])
+            classes[lind[0]] = obno
+            obno += 1
+    return classes
+
+
 def get_class_name(classesList, index):
     print(classesList, index)
     print(list(classesList.values()).index(int(index)))
@@ -123,18 +138,7 @@ class YoloReader:
 
         # print (filepath, self.classListPath)
 
-        # read classes information
-        with codecs.open(self.classListPath, 'r', 'utf-8') as f:
-            lines = f.readlines()
-            obno = 0
-            self.classes = {}
-            for l in lines:
-                l = l.strip().split(':')
-                if len(l) > 1:
-                    obno = int(l[1])
-                self.classes[l[0]] = obno
-                obno += 1
-
+        self.classes = load_classes_info(self.classListPath)
         # print (self.classes)
 
         imgSize = [
