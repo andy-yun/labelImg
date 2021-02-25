@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import sys
 import os
-from xml.etree import ElementTree
-from xml.etree.ElementTree import Element, SubElement
-from lxml import etree
 import codecs
 from libs.constants import DEFAULT_ENCODING
 
@@ -19,10 +15,10 @@ def load_classes_info(classListPath):
         lines = f.readlines()
         obno = 0
         for line in lines:
-            line = l.strip().split(':')
+            line = line.strip().split(':')
             if len(line) > 1:
-                obno = int(lind[1])
-            classes[lind[0]] = obno
+                obno = int(line[1])
+            classes[line[0]] = obno
             obno += 1
     return classes
 
@@ -90,8 +86,8 @@ class YOLOWriter:
 
     def save(self, classList={}, targetFile=None):
 
-        out_file = None  #Update yolo .txt
-        out_class_file = None  #Update class list .txt
+        out_file = None  # Update yolo .txt
+        out_class_file = None  # Update class list .txt
 
         if targetFile is None:
             out_file = open(self.filename + TXT_EXT,
